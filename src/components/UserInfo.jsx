@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TextField, Button, Typography, Avatar, Grid, FormControlLabel, Switch, CssBaseline, Pagination, Box } from '@mui/material';
+import { TextField, Button, Typography, Avatar, Grid, FormControlLabel, Switch, CssBaseline, Pagination, Box, CircularProgress } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
@@ -26,31 +26,37 @@ function UserInfo() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const fetchUserData = async () => {
     try {
+      setIsLoading(true);
       const response = await axios.get(`https://api.github.com/users/${username}`);
       setUser(response.data);
       fetchUserRepos(1);
     } catch (error) {
       console.error(error);
       toast.error('User not found or network error occurred.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const fetchUserRepos = async (page) => {
     try {
+      setIsLoading(true);
       const perPage = 3;
       const response = await axios.get(`https://api.github.com/users/${username}/repos?per_page=${perPage}&page=${page}`);
       setRepos(response.data);
       const linkHeader = response.headers.link;
       const totalCount = linkHeader ? parseInt(linkHeader.split(',')[1].match(/page=(\d+)>; rel="last"/)[1]) * perPage : 0;
       const totalPages = Math.ceil(totalCount / perPage);
-      console.log(response.data);
       setTotalPages(totalPages);
       setCurrentPage(page);
     } catch (error) {
       console.error(error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -86,8 +92,8 @@ function UserInfo() {
           onChange={(e) => setUsername(e.target.value)}
           style={{ marginBottom: '1rem' }}
         />
-        <Button variant="contained" onClick={fetchUserData} >
-          Fetch
+        <Button variant="contained" onClick={fetchUserData} disabled={isLoading}>
+          {isLoading ? <CircularProgress size={24} /> : 'Fetch'}
         </Button>
 
         {user && (
